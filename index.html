@@ -1,0 +1,898 @@
+<meta charset="UTF-8">
+<title>Declutter Dice</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Karla:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* outer stage — theme aware */
+  --stage-1:#E7F0EA;
+  --stage-2:#CADED0;
+  --stage-text:#1C2620;
+  --stage-muted:#5b6b60;
+
+  /* fixed in-app palette (the product's own design) */
+  --app-bg:#F2F6F1;
+  --paper:#FFFFFF;
+  --ink:#1E2A22;
+  --ink-70:rgba(30,42,34,.72);
+  --ink-50:rgba(30,42,34,.52);
+  --ink-30:rgba(30,42,34,.46);
+  --line:rgba(30,42,34,.10);
+  --coral:#F2643D;
+  --coral-dark:#D8502C;
+  --coral-tint:#FDEBE3;
+  --gold:#F0B23E;
+  --gold-tint:#FCF0D8;
+  --mint:#CFE3D3;
+  --mint-tint:#E7F1E9;
+  --violet-tint:#F0E9F7;
+  --violet:#7A57A6;
+  --shadow-s:0 2px 10px rgba(28,38,32,.08);
+  --shadow-m:0 12px 30px rgba(28,38,32,.14);
+  --shadow-l:0 24px 60px rgba(28,38,32,.22);
+  --r-lg:26px; --r-md:18px; --r-sm:12px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --stage-1:#0D1310; --stage-2:#182620; --stage-text:#E9F1EA; --stage-muted:#93a89b; }
+}
+:root[data-theme="dark"]{ --stage-1:#0D1310; --stage-2:#182620; --stage-text:#E9F1EA; --stage-muted:#93a89b; }
+
+/* in-app manual dark-mode override (Settings > Dark mode), independent of the outer stage theme */
+.screen-clip{ --app-bg:#F2F6F1; --paper:#FFFFFF; --ink:#1E2A22; --ink-70:rgba(30,42,34,.72); --ink-50:rgba(30,42,34,.52); --ink-30:rgba(30,42,34,.46); --line:rgba(30,42,34,.10); }
+.phone[data-app-theme="dark"] .screen-clip{ --app-bg:#151B17; --paper:#1E2620; --ink:#EAF1EA; --ink-70:rgba(234,241,234,.72); --ink-50:rgba(234,241,234,.52); --ink-30:rgba(234,241,234,.46); --line:rgba(234,241,234,.12); }
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{ background:var(--stage-1); color:var(--stage-text); font-family:'Karla',ui-sans-serif,system-ui,sans-serif; -webkit-font-smoothing:antialiased; }
+button{font-family:inherit;}
+img{max-width:100%;}
+
+/* ===== STAGE ===== */
+.stage{ position:relative; min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px; padding:36px 14px; overflow:hidden;
+  background: radial-gradient(120% 90% at 50% -8%, var(--stage-2), transparent 60%), var(--stage-1); }
+.stage::before{ content:""; position:absolute; inset:0; opacity:.05; background-image:repeating-radial-gradient(circle at 0 0, var(--stage-text) 0 1.5px, transparent 1.5px 26px); pointer-events:none; }
+.stage-brand{ position:relative; text-align:center; }
+.stage-brand .word{ font-family:'Fredoka',sans-serif; font-weight:700; font-size:15px; letter-spacing:.06em; text-transform:uppercase; opacity:.9; }
+.stage-brand .sub{ font-size:11px; letter-spacing:.04em; color:var(--stage-muted); margin-top:3px; }
+.stage-hint{ position:relative; font-size:12px; color:var(--stage-muted); max-width:380px; text-align:center; line-height:1.6; }
+
+/* ===== PHONE ===== */
+.phone-wrap{ position:relative; width:390px; height:844px; flex:0 0 auto; }
+.phone{ width:390px; height:844px; background:#0B0B0A; border-radius:52px; padding:12px; box-shadow:var(--shadow-l), 0 0 0 2px rgba(255,255,255,.04) inset; position:relative; }
+.screen-clip{ width:100%; height:100%; background:var(--app-bg); color:var(--ink); border-radius:40px; overflow:hidden; position:relative; display:flex; flex-direction:column; }
+.notch{ position:absolute; top:12px; left:50%; transform:translateX(-50%); width:120px; height:28px; background:#0B0B0A; border-radius:20px; z-index:50; }
+.statusbar{ height:46px; flex:0 0 auto; display:flex; align-items:flex-end; justify-content:space-between; padding:0 26px 6px; font-size:14px; font-weight:700; color:var(--ink); font-variant-numeric:tabular-nums; }
+
+.screens{ position:relative; flex:1 1 auto; min-height:0; }
+.screen{ position:absolute; inset:0; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; opacity:0; visibility:hidden; pointer-events:none; transform:translateX(14px); transition:opacity .26s ease, transform .3s cubic-bezier(.2,.7,.3,1); }
+.screen.active{ opacity:1; visibility:visible; pointer-events:auto; transform:translateX(0); }
+.screen::-webkit-scrollbar{ display:none; }
+@media (prefers-reduced-motion: reduce){ .screen{ transition:opacity .1s linear; transform:none; } }
+
+h1,h2,h3{ font-family:'Fredoka',sans-serif; font-weight:600; color:var(--ink); margin:0; text-wrap:balance; }
+h1{ font-size:22px; } h2{ font-size:17px; } h3{ font-size:14px; }
+p{ margin:0; color:var(--ink-70); line-height:1.5; font-size:13.5px; }
+
+.topbar{ display:flex; align-items:center; justify-content:space-between; padding:16px 20px 6px; }
+.brandmark b{ font-family:'Fredoka',sans-serif; font-weight:700; font-size:17px; color:var(--ink); display:block; }
+.brandmark span{ font-size:11.5px; color:var(--ink-50); }
+.streak-chip{ display:flex; align-items:center; gap:5px; background:var(--gold-tint); color:#8A5B0E; font-weight:800; font-size:13px; padding:8px 13px; border-radius:100px; font-variant-numeric:tabular-nums; flex:0 0 auto; }
+
+.btn{ appearance:none; border:none; cursor:pointer; font-family:'Karla',sans-serif; font-weight:700; font-size:14.5px; border-radius:100px; padding:14px 22px; display:flex; align-items:center; justify-content:center; gap:8px; transition:transform .15s ease, opacity .15s ease; width:100%; }
+.btn:active{ transform:scale(.97); }
+.btn-primary{ background:var(--coral); color:#fff; box-shadow:0 10px 22px rgba(216,80,44,.32); }
+.btn-ghost{ background:var(--paper); color:var(--ink); border:1.5px solid var(--line); }
+.btn-text{ background:transparent; color:var(--coral-dark); font-weight:700; font-size:13px; width:auto; padding:8px; }
+
+/* ===== HOME / ROLL ===== */
+.hero-card{ margin:14px 20px 0; background:var(--paper); border-radius:var(--r-lg); box-shadow:var(--shadow-s); padding:26px 22px 22px; text-align:center; position:relative; overflow:visible; }
+.hero-eyebrow{ font-size:11px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-30); margin-bottom:14px; }
+.hero-tagline{ font-size:13.5px; color:var(--ink-50); margin:-4px 0 16px; }
+
+.die-wrap{ position:relative; width:124px; height:124px; margin:0 auto; }
+.die{ width:124px; height:124px; border-radius:28px; background:linear-gradient(160deg, var(--coral), var(--coral-dark)); box-shadow:0 16px 32px rgba(216,80,44,.38), inset 0 -8px 0 rgba(0,0,0,.10); display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr); padding:20px; gap:6px; cursor:pointer; transition:transform .16s ease; }
+.die:active{ transform:scale(.94); }
+.die.rolling{ animation:dieShake .55s ease; }
+@keyframes dieShake{ 0%{transform:rotate(0) scale(1);} 20%{transform:rotate(-9deg) scale(1.06);} 40%{transform:rotate(7deg) scale(.96);} 60%{transform:rotate(-5deg) scale(1.04);} 80%{transform:rotate(3deg) scale(.98);} 100%{transform:rotate(0) scale(1);} }
+@media (prefers-reduced-motion: reduce){ .die.rolling{ animation:none; } }
+.pip{ border-radius:50%; background:transparent; }
+.pip.on{ background:#fff; box-shadow:inset 0 2px 3px rgba(0,0,0,.18); }
+.die.static{ cursor:default; }
+
+.done-badge{ width:124px; height:124px; margin:0 auto; border-radius:50%; background:var(--mint-tint); display:flex; align-items:center; justify-content:center; font-size:48px; box-shadow:var(--shadow-s); }
+
+.roll-cta{ margin-top:20px; }
+
+.task-card{ margin-top:18px; text-align:left; }
+.cat-chip{ display:inline-flex; align-items:center; gap:7px; padding:7px 13px; border-radius:100px; font-weight:800; font-size:12px; }
+.task-text{ font-family:'Fredoka',sans-serif; font-weight:600; font-size:18px; color:var(--ink); margin-top:12px; line-height:1.35; }
+.meta-row{ display:flex; align-items:center; gap:8px; margin-top:12px; flex-wrap:wrap; }
+.diff-pill{ display:inline-flex; align-items:center; gap:5px; background:var(--app-bg); color:var(--ink-70); font-size:11.5px; font-weight:700; padding:6px 11px; border-radius:100px; }
+.xp-pill{ display:inline-flex; align-items:center; background:var(--gold-tint); color:#8A5B0E; font-size:11.5px; font-weight:800; padding:6px 11px; border-radius:100px; }
+.task-actions{ display:flex; gap:10px; margin-top:18px; }
+.task-actions .btn{ flex:1; }
+.task-actions.single{ justify-content:center; }
+.task-actions.single .btn{ flex:none; width:auto; padding:12px 24px; }
+
+.celebrate-xp{ font-family:'Fredoka',sans-serif; font-weight:700; font-size:26px; color:var(--coral-dark); margin-top:10px; }
+.celebrate-streak{ margin-top:6px; font-size:13px; color:var(--ink-50); font-weight:600; }
+
+/* XP + progress + recent wins */
+.xp-row{ display:flex; gap:10px; margin:16px 20px 0; }
+.xp-tile{ flex:1; background:var(--paper); border-radius:var(--r-md); box-shadow:var(--shadow-s); padding:14px 16px; }
+.xp-tile .l{ font-size:11px; font-weight:700; color:var(--ink-50); text-transform:uppercase; letter-spacing:.04em; }
+.xp-tile .n{ font-family:'Fredoka',sans-serif; font-weight:700; font-size:21px; color:var(--ink); margin-top:3px; font-variant-numeric:tabular-nums; }
+.xp-tile .lvl{ font-size:11px; color:var(--coral-dark); font-weight:700; margin-top:2px; }
+
+.progress-card{ margin:12px 20px 0; background:var(--paper); border-radius:var(--r-md); box-shadow:var(--shadow-s); padding:16px 18px; }
+.progress-head{ font-size:12.5px; font-weight:800; color:var(--ink); margin-bottom:10px; }
+.progress-bar{ height:8px; border-radius:100px; background:var(--app-bg); overflow:hidden; }
+.progress-fill{ height:100%; background:linear-gradient(90deg, var(--coral), var(--gold)); border-radius:100px; transition:width .4s ease; }
+.progress-nums{ display:flex; justify-content:space-between; margin-top:9px; font-size:11.5px; color:var(--ink-50); font-weight:600; }
+
+.recent-wins{ margin:20px 20px 0; }
+.recent-row{ display:flex; align-items:center; gap:10px; padding:11px 0; border-bottom:1px solid var(--line); }
+.recent-row:last-child{ border-bottom:none; }
+.recent-row .ic{ width:32px; height:32px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:14px; flex:0 0 auto; }
+.recent-row .txt{ flex:1; font-size:12.5px; color:var(--ink); min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.recent-row .xp{ font-size:11px; font-weight:800; color:var(--coral-dark); flex:0 0 auto; }
+
+/* confetti */
+.confetti-layer{ position:absolute; inset:0; pointer-events:none; overflow:visible; z-index:5; }
+.confetti-piece{ position:absolute; top:50%; left:50%; width:8px; height:8px; border-radius:2px; animation:confettiBurst .85s ease-out forwards; }
+@keyframes confettiBurst{ to{ transform:translate(var(--tx), var(--ty)) rotate(var(--rot)); opacity:0; } }
+
+/* toast */
+.toast{ position:absolute; left:50%; bottom:96px; transform:translate(-50%,10px); background:var(--ink); color:var(--paper); font-size:12.5px; font-weight:700; padding:11px 18px; border-radius:100px; box-shadow:var(--shadow-m); opacity:0; pointer-events:none; transition:opacity .25s ease, transform .25s ease; z-index:200; white-space:nowrap; }
+.toast.show{ opacity:1; transform:translate(-50%,0); }
+
+/* bottom nav */
+.bottomnav{ flex:0 0 auto; height:78px; padding-bottom:12px; display:flex; align-items:center; justify-content:space-around; background:var(--paper); border-top:1px solid var(--line); }
+.navitem{ display:flex; flex-direction:column; align-items:center; gap:4px; color:var(--ink-50); cursor:pointer; font-size:10.5px; font-weight:700; width:80px; }
+.navitem .ic{ font-size:20px; }
+.navitem.on{ color:var(--coral-dark); }
+
+/* ===== HISTORY ===== */
+.summary-grid{ margin:14px 20px 0; display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.summary-tile{ background:var(--paper); border-radius:var(--r-md); box-shadow:var(--shadow-s); padding:13px 14px; }
+.summary-tile .n{ font-family:'Fredoka',sans-serif; font-weight:700; font-size:19px; color:var(--ink); font-variant-numeric:tabular-nums; }
+.summary-tile .l{ font-size:10.5px; font-weight:700; color:var(--ink-50); text-transform:uppercase; letter-spacing:.04em; margin-top:2px; }
+.hist-filters{ display:flex; gap:8px; overflow-x:auto; padding:16px 20px 4px; scrollbar-width:none; }
+.hist-filters::-webkit-scrollbar{ display:none; }
+.hist-chip{ flex:0 0 auto; padding:8px 14px; border-radius:100px; font-size:12px; font-weight:700; cursor:pointer; background:var(--paper); color:var(--ink-70); border:1px solid var(--line); white-space:nowrap; }
+.hist-chip.on{ background:var(--ink); color:var(--paper); border-color:var(--ink); }
+.hist-group-label{ font-size:11.5px; font-weight:800; color:var(--ink-30); text-transform:uppercase; letter-spacing:.06em; padding:18px 20px 8px; }
+.hist-row{ display:flex; align-items:center; gap:12px; margin:0 20px 10px; padding:13px 14px; background:var(--paper); border-radius:var(--r-md); box-shadow:var(--shadow-s); }
+.hist-row .ic{ width:38px; height:38px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:17px; flex:0 0 auto; }
+.hist-row .body{ flex:1; min-width:0; }
+.hist-row .cat{ font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:.03em; color:var(--ink-50); }
+.hist-row .txt{ font-size:13px; color:var(--ink); margin-top:2px; }
+.hist-row .right{ text-align:right; flex:0 0 auto; }
+.hist-row .check{ color:#2E8570; font-weight:800; display:block; }
+.hist-row .xp{ font-size:10.5px; font-weight:800; color:var(--coral-dark); margin-top:2px; }
+.empty-state{ margin:40px 20px; text-align:center; padding:40px 20px; border-radius:var(--r-lg); background:var(--paper); box-shadow:var(--shadow-s); }
+.empty-state .ic{ font-size:34px; margin-bottom:10px; }
+
+/* ===== SETTINGS ===== */
+.section-label{ padding:20px 20px 8px; font-size:11.5px; font-weight:800; color:var(--ink-30); text-transform:uppercase; letter-spacing:.06em; }
+.settings-list{ margin:0 20px; border-radius:var(--r-lg); overflow:hidden; background:var(--paper); box-shadow:var(--shadow-s); }
+.settings-row{ display:flex; align-items:center; gap:12px; padding:14px 16px; border-bottom:1px solid var(--line); cursor:pointer; }
+.settings-row:last-child{ border-bottom:none; }
+.settings-row .ic{ width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:16px; flex:0 0 auto; }
+.settings-row b{ font-size:13.5px; flex:1; }
+.settings-row .chev{ color:var(--ink-30); }
+.settings-row .cap{ font-size:11px; color:var(--ink-50); display:block; margin-top:1px; }
+.toggle{ width:42px; height:25px; border-radius:100px; background:var(--ink-30); position:relative; cursor:pointer; flex:0 0 auto; transition:background .2s ease; }
+.toggle::after{ content:""; position:absolute; top:2.5px; left:3px; width:20px; height:20px; border-radius:50%; background:#fff; transition:left .2s ease; box-shadow:var(--shadow-s); }
+.toggle.on{ background:var(--coral); }
+.toggle.on::after{ left:19px; }
+.reset-btn{ margin:24px 20px 0; }
+
+/* modal */
+.modal-overlay{ position:absolute; inset:0; background:rgba(20,30,24,.5); display:flex; align-items:flex-end; opacity:0; pointer-events:none; transition:opacity .25s ease; z-index:100; }
+.modal-overlay.show{ opacity:1; pointer-events:auto; }
+.sheet{ background:var(--app-bg); width:100%; border-radius:26px 26px 0 0; padding:10px 22px 30px; transform:translateY(30px); transition:transform .3s cubic-bezier(.2,.7,.2,1); text-align:center; }
+.modal-overlay.show .sheet{ transform:translateY(0); }
+.sheet-handle{ width:36px; height:4px; border-radius:3px; background:var(--line); margin:6px auto 18px; }
+.about-mark{ font-size:40px; }
+.about-ver{ margin-top:14px; font-size:11.5px; color:var(--ink-30); }
+</style>
+
+<div class="stage">
+  <div class="stage-brand">
+    <div class="word">Declutter Dice</div>
+    <div class="sub">One roll. One tiny task. One less thing to carry.</div>
+  </div>
+
+  <div class="phone-wrap" id="phoneWrap">
+    <div class="phone" id="phoneEl">
+      <div class="notch"></div>
+      <div class="screen-clip">
+        <div class="statusbar"><span id="clock">9:41</span><div><span>••••</span> <span>📶</span> <span>🔋</span></div></div>
+
+        <div class="screens" id="screens">
+
+          <!-- HOME -->
+          <section class="screen active" data-screen="home">
+            <div class="topbar">
+              <div class="brandmark" id="greeting"><b>Good morning 👋</b><span>Ready to clear one thing?</span></div>
+              <div class="streak-chip" id="streakChip">🔥 0</div>
+            </div>
+
+            <div class="hero-card" id="heroCard"></div>
+            <div class="xp-row" id="xpRow"></div>
+            <div class="progress-card" id="progressCard"></div>
+            <div class="recent-wins" id="recentWins"></div>
+
+            <div style="height:24px;"></div>
+          </section>
+
+          <!-- HISTORY -->
+          <section class="screen" data-screen="history">
+            <div class="topbar"><h1>Your History</h1><span></span></div>
+            <div class="summary-grid" id="histSummary"></div>
+            <div class="hist-filters" id="histFilters"></div>
+            <div id="histList"></div>
+            <div style="height:20px;"></div>
+          </section>
+
+          <!-- SETTINGS -->
+          <section class="screen" data-screen="settings">
+            <div class="topbar"><h1>Settings</h1><span></span></div>
+
+            <div class="section-label">Task Categories</div>
+            <p style="padding:0 20px;">Choose which categories can turn up on your roll.</p>
+            <div class="settings-list" id="catList" style="margin-top:12px;"></div>
+
+            <div class="section-label">Preferences</div>
+            <div class="settings-list" id="prefList"></div>
+
+            <div class="reset-btn">
+              <button class="btn btn-ghost" id="resetBtn" onclick="resetProgress()">Reset progress</button>
+            </div>
+          </section>
+
+        </div>
+
+        <div class="bottomnav" id="bottomnav">
+          <div class="navitem" data-nav="home" onclick="go('home')"><div class="ic">🎲</div>Roll</div>
+          <div class="navitem" data-nav="history" onclick="go('history')"><div class="ic">🕒</div>History</div>
+          <div class="navitem" data-nav="settings" onclick="go('settings')"><div class="ic">⚙️</div>Settings</div>
+        </div>
+
+        <!-- ABOUT MODAL -->
+        <div class="modal-overlay" id="aboutModal" onclick="if(event.target===this)closeAbout()">
+          <div class="sheet">
+            <div class="sheet-handle"></div>
+            <div class="about-mark">🎲</div>
+            <h2 style="margin-top:10px;">Declutter Dice</h2>
+            <p style="margin-top:6px;">One roll. One tiny task. One less thing to carry.<br>72 tiny ways to clear your digital space, a little at a time.</p>
+            <div class="about-ver">Version 1.0 · Everything stays on this device.</div>
+            <div style="margin-top:20px;"><button class="btn btn-ghost" onclick="closeAbout()">Close</button></div>
+          </div>
+        </div>
+
+        <div class="toast" id="toast"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stage-hint">Tap the die — each face is a category. Roll → Start → do the tiny task → mark it done. XP and streak build as you go.</div>
+</div>
+
+<script>
+/* =========================================================================
+   TASK LIBRARY
+   Difficulty tiers: Easy (1–2 min, 5 XP) · Medium (3–5 min, 10 XP) · Brave (5–10 min, 20 XP)
+   ========================================================================= */
+const DIFF = {
+  Easy:   {dot:'🟢', xp:5,  time:'~2 min'},
+  Medium: {dot:'🟡', xp:10, time:'~4 min'},
+  Brave:  {dot:'🔴', xp:20, time:'~8 min'},
+};
+const DICE_FACES = [
+  {n:1, category:'Inbox',         icon:'📧'},
+  {n:2, category:'Photos',        icon:'📷'},
+  {n:3, category:'Files',         icon:'📁'},
+  {n:4, category:'Apps',          icon:'📱'},
+  {n:5, category:'Subscriptions', icon:'💳'},
+  {n:6, category:'Wildcard',      icon:'✨'},
+];
+const CAT_COLORS = {
+  Inbox:         {bg:'#E7EEF8', fg:'#3B5B8C'},
+  Photos:        {bg:'#FBEAEE', fg:'#B5495F'},
+  Files:         {bg:'#FBF1DE', fg:'#A87A1E'},
+  Apps:          {bg:'#E4F3EE', fg:'#2E8570'},
+  Subscriptions: {bg:'#F0E9F7', fg:'#7A57A6'},
+  Wildcard:      {bg:'#FDEBE3', fg:'#D8502C'},
+};
+const RAW_TASKS = {
+  Inbox: [
+    ['Unsubscribe from one newsletter you never read.', 'Easy'],
+    ['Delete ten promotional emails in one swipe.', 'Easy'],
+    ['Archive every email from one sender that’s older than a year.', 'Medium'],
+    ['Empty your spam folder.', 'Easy'],
+    ['Mark one cluttered inbox folder read and move on.', 'Easy'],
+    ['Delete every “your order has shipped” email you don’t need anymore.', 'Medium'],
+    ['Unsubscribe from one store’s marketing emails.', 'Easy'],
+    ['Search “unsubscribe” and clear one result.', 'Easy'],
+    ['Delete one email thread that’s already resolved.', 'Easy'],
+    ['Turn off email notifications for one app.', 'Easy'],
+    ['Move one folder of old emails to archive.', 'Medium'],
+    ['Delete every email with an attachment you’ll never open again.', 'Medium'],
+  ],
+  Photos: [
+    ['Delete one blurry or duplicate photo.', 'Easy'],
+    ['Clear one useless shot from your screenshots.', 'Easy'],
+    ['Delete a photo you’ve never looked back at.', 'Easy'],
+    ['Empty your “recently deleted” album if it’s full.', 'Easy'],
+    ['Delete one screen recording you forgot you made.', 'Easy'],
+    ['Delete one meme you saved and never sent.', 'Easy'],
+    ['Clear five near-identical photos down to your favorite.', 'Easy'],
+    ['Delete one photo of a receipt you already logged.', 'Easy'],
+    ['Remove one video that’s just taking up space.', 'Medium'],
+    ['Delete one photo from an event you’d rather forget.', 'Brave'],
+    ['Star or delete — pick one photo sitting in limbo.', 'Medium'],
+    ['Clear one album you created and forgot about.', 'Medium'],
+  ],
+  Files: [
+    ['Delete one file that’s been sitting in Downloads for months.', 'Easy'],
+    ['Clear one stray file you no longer need.', 'Easy'],
+    ['Skim your trash or recycle bin — empty it once you’re sure it’s junk.', 'Medium'],
+    ['Rename or delete one folder still called “New Folder”.', 'Easy'],
+    ['Delete one old draft you’ll never finish.', 'Brave'],
+    ['Delete one duplicate file you spot in a folder.', 'Easy'],
+    ['Clear one PDF you downloaded and never opened.', 'Easy'],
+    ['Delete one installer you already ran and don’t need anymore.', 'Easy'],
+    ['Empty one folder of screenshots you no longer need.', 'Easy'],
+    ['Delete one file with “final_v2” in the name.', 'Easy'],
+    ['Tidy or delete one messy folder you’ve been avoiding.', 'Brave'],
+    ['Clear old files out of your phone’s Files app.', 'Medium'],
+  ],
+  Apps: [
+    ['Delete one app you haven’t opened in 30 days.', 'Easy'],
+    ['Turn off notifications for one noisy app.', 'Easy'],
+    ['Log out of one account you don’t use anymore.', 'Easy'],
+    ['Remove one app from your home screen.', 'Easy'],
+    ['Delete one game you finished — or gave up on.', 'Medium'],
+    ['Turn off one app’s location access you don’t need.', 'Easy'],
+    ['Uninstall one app you downloaded “just to try”.', 'Easy'],
+    ['Clear one app’s chat history you don’t need.', 'Medium'],
+    ['Remove one widget you never actually check.', 'Easy'],
+    ['Unfollow or mute one account cluttering your feed.', 'Easy'],
+    ['Delete one duplicate app — two to-do apps, two note apps.', 'Medium'],
+    ['Delete one app you downloaded for a single occasion.', 'Easy'],
+  ],
+  Subscriptions: [
+    ['Review one recurring subscription — keep it or cancel it.', 'Medium'],
+    ['Check if you’re still using that free trial you forgot about.', 'Easy'],
+    ['Unsubscribe from one SMS or promo list.', 'Easy'],
+    ['Downgrade one plan you’re overpaying for.', 'Brave'],
+    ['Cancel one subscription you haven’t used this month.', 'Brave'],
+    ['Check one app-store subscription you forgot existed.', 'Medium'],
+    ['Cancel one streaming service you’re not actually watching.', 'Brave'],
+    ['Switch one subscription to annual, or cancel it.', 'Medium'],
+    ['Scan your card statement for one subscription you don’t recognize.', 'Medium'],
+    ['Cancel one trial before it auto-renews.', 'Medium'],
+  ],
+  Wildcard: [
+    ['Close one browser tab group you’ve been hoarding.', 'Medium'],
+    ['Review one contact you don’t recognize — remove it if you don’t need it.', 'Easy'],
+    ['Delete one voice memo you’ll never listen to again.', 'Easy'],
+    ['Clear one outdated autofill entry from your browser.', 'Easy'],
+    ['Remove one item from a wishlist you’ll never buy.', 'Easy'],
+    ['Delete one note that’s just a scribble now.', 'Easy'],
+    ['Clear one “watch later” video you’ll never watch.', 'Easy'],
+    ['Clean up one duplicate saved login in your password manager.', 'Medium'],
+    ['Delete one draft message you never sent.', 'Easy'],
+    ['Remove one unnecessary bookmark.', 'Easy'],
+    ['Delete one old reminder you’ve already completed.', 'Easy'],
+    ['Remove one unused shortcut from your home screen.', 'Easy'],
+    ['Delete one old voice recording.', 'Easy'],
+    ['Find one digital thing you’ve been avoiding and let it go.', 'Brave'],
+  ],
+};
+// Build the structured task engine: { id, text, category, difficulty, time, xp }
+const TASKS_BY_CATEGORY = {};
+const TASK_BY_ID = {};
+let TASK_COUNT = 0;
+Object.keys(RAW_TASKS).forEach(cat=>{
+  TASKS_BY_CATEGORY[cat] = RAW_TASKS[cat].map(([text, difficulty], i)=>{
+    const d = DIFF[difficulty];
+    const task = { id: cat.toLowerCase()+'-'+(i+1), text, category:cat, difficulty, time:d.time, xp:d.xp };
+    TASK_BY_ID[task.id] = task;
+    TASK_COUNT++;
+    return task;
+  });
+});
+const DICE_PIPS = { 1:[4], 2:[0,8], 3:[0,4,8], 4:[0,2,6,8], 5:[0,2,4,6,8], 6:[0,2,3,5,6,8] };
+const LEVELS = [
+  {max:49,  name:'Fresh Start'},
+  {max:149, name:'Tidying Up'},
+  {max:299, name:'Getting Clear'},
+  {max:499, name:'Digital Minimalist'},
+  {max:Infinity, name:'Declutter Master'},
+];
+function levelFor(xp){ return LEVELS.find(l=>xp<=l.max).name; }
+const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* =========================================================================
+   STATE
+   ========================================================================= */
+const STATE_VERSION = 2; // bump whenever the state/history shape changes — old data is discarded, never half-applied
+function defaultState(){
+  return {
+    version: STATE_VERSION,
+    xp: 0,
+    streak: 0,
+    longestStreak: 0,
+    lastCompleteDate: null,
+    history: [],                 // [{entryId, taskId, category, text, difficulty, xp, date, ts}]
+    completedByCategory: {},     // {category: [taskId,...]} — cycles; resets when a category is fully covered
+    allTimeCompletedIds: [],     // unique task ids ever completed — never resets (library-progress stat)
+    categories: {Inbox:true, Photos:true, Files:true, Apps:true, Subscriptions:true, Wildcard:true},
+    settings: { reminder:false, sound:true, haptics:true, darkMode:false },
+  };
+}
+function loadState(){
+  try{
+    const v = localStorage.getItem('dd_state');
+    if(v){
+      const s = JSON.parse(v);
+      if(s.version === STATE_VERSION){
+        const d = defaultState();
+        return Object.assign(d, s, { settings: Object.assign(d.settings, s.settings||{}) });
+      }
+      // older/incompatible shape (e.g. history entries with no xp/taskId) — start clean rather than half-merge
+    }
+  }catch(e){}
+  return defaultState();
+}
+let state = loadState();
+function saveState(){ try{ localStorage.setItem('dd_state', JSON.stringify(state)); }catch(e){} }
+
+function todayStr(){
+  const d = new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function dateFromStr(s){ const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); }
+function isYesterday(dateStr){
+  if(!dateStr) return false;
+  const d = dateFromStr(dateStr);
+  d.setDate(d.getDate()+1);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0') === todayStr();
+}
+function prettyDate(dateStr){
+  const today = todayStr();
+  if(dateStr===today) return 'Today';
+  const d = dateFromStr(dateStr);
+  const y = new Date(); y.setDate(y.getDate()-1);
+  const yStr = y.getFullYear()+'-'+String(y.getMonth()+1).padStart(2,'0')+'-'+String(y.getDate()).padStart(2,'0');
+  if(dateStr===yStr) return 'Yesterday';
+  return d.toLocaleDateString(undefined, {weekday: (Date.now()-d.getTime() < 6*86400000) ? 'long' : undefined, month:'short', day:'numeric'});
+}
+
+/* =========================================================================
+   ROUTER / TOAST
+   ========================================================================= */
+function go(name){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  const t = document.querySelector(`.screen[data-screen="${name}"]`);
+  if(t){ t.classList.add('active'); t.scrollTop = 0; }
+  document.querySelectorAll('.navitem').forEach(n=>n.classList.toggle('on', n.dataset.nav===name));
+  if(name==='home'){ heroState='idle'; currentRoll=null; renderHome(); }
+  if(name==='history'){ renderHistory(); }
+  if(name==='settings'){ renderSettings(); }
+}
+let toastT;
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastT); toastT = setTimeout(()=>t.classList.remove('show'), 2200);
+}
+function greetingWord(){
+  const h = new Date().getHours();
+  if(h < 12) return 'Good morning';
+  if(h < 17) return 'Good afternoon';
+  return 'Good evening';
+}
+
+/* =========================================================================
+   DIE
+   ========================================================================= */
+function pipsHTML(n){
+  const cells = Array(9).fill(false);
+  (DICE_PIPS[n]||[]).forEach(i=>cells[i]=true);
+  return cells.map(on=>`<div class="pip ${on?'on':''}"></div>`).join('');
+}
+function animateDie(dieEl, finalFace, onDone){
+  if(reduceMotion){ dieEl.innerHTML = pipsHTML(finalFace); onDone && onDone(); return; }
+  dieEl.classList.add('rolling');
+  let ticks = 0; const maxTicks = 8;
+  const iv = setInterval(()=>{
+    ticks++;
+    const shown = ticks>=maxTicks ? finalFace : (Math.floor(Math.random()*6)+1);
+    dieEl.innerHTML = pipsHTML(shown);
+    if(ticks>=maxTicks){
+      clearInterval(iv);
+      setTimeout(()=>dieEl.classList.remove('rolling'), 550);
+    }
+  }, 65);
+  setTimeout(()=>onDone && onDone(), maxTicks*65 + 80);
+}
+
+/* =========================================================================
+   TASK ENGINE — category pick, non-repeating task pick
+   ========================================================================= */
+let lastShownTaskId = null;
+function enabledFaces(){
+  const list = DICE_FACES.filter(f=>state.categories[f.category]);
+  return list.length ? list : DICE_FACES;
+}
+function pickTask(category){
+  const pool = TASKS_BY_CATEGORY[category];
+  const completed = state.completedByCategory[category] || [];
+  let available = pool.filter(t=>!completed.includes(t.id));
+  if(available.length===0){
+    state.completedByCategory[category] = [];
+    available = pool.slice();
+  }
+  if(available.length>1){
+    const filtered = available.filter(t=>t.id!==lastShownTaskId);
+    if(filtered.length) available = filtered;
+  }
+  const task = available[Math.floor(Math.random()*available.length)];
+  lastShownTaskId = task.id;
+  return task;
+}
+
+/* =========================================================================
+   ROLL FLOW: idle → rolling → reveal → active → celebrate
+   ========================================================================= */
+let heroState = 'idle';
+let currentRoll = null; // {face, task}
+
+function rollDice(){
+  const face = enabledFaces()[Math.floor(Math.random()*enabledFaces().length)];
+  const task = pickTask(face.category);
+  currentRoll = {face, task};
+  heroState = 'rolling';
+  renderHeroCard();
+  const dieEl = document.getElementById('theDie');
+  if(dieEl){
+    animateDie(dieEl, face.n, ()=>{ heroState='reveal'; renderHeroCard(); });
+  } else {
+    heroState = 'reveal'; renderHeroCard();
+  }
+}
+function startTask(){ heroState='active'; renderHeroCard(); }
+function skipTask(){ heroState='idle'; currentRoll=null; renderHeroCard(); }
+function completeTask(){
+  if(!currentRoll) return;
+  const task = currentRoll.task;
+  const today = todayStr();
+
+  state.completedByCategory[task.category] = state.completedByCategory[task.category] || [];
+  if(!state.completedByCategory[task.category].includes(task.id)) state.completedByCategory[task.category].push(task.id);
+  if(!state.allTimeCompletedIds.includes(task.id)) state.allTimeCompletedIds.push(task.id);
+
+  state.xp += task.xp;
+
+  if(state.lastCompleteDate !== today){
+    state.streak = isYesterday(state.lastCompleteDate) ? state.streak+1 : 1;
+    state.longestStreak = Math.max(state.longestStreak, state.streak);
+    state.lastCompleteDate = today;
+  }
+
+  state.history.unshift({ entryId:'h'+Date.now()+Math.floor(Math.random()*1000), taskId:task.id, category:task.category, text:task.text, difficulty:task.difficulty, xp:task.xp, date:today, ts:Date.now() });
+  saveState();
+
+  heroState = 'celebrate';
+  renderHeroCard();
+  renderStatsBlocks();
+  playChime();
+  vibrate();
+  burstConfetti();
+}
+
+/* =========================================================================
+   HERO CARD RENDER (idle / rolling / reveal / active / celebrate)
+   ========================================================================= */
+function renderHeroCard(){
+  const card = document.getElementById('heroCard');
+  if(heroState==='idle'){
+    card.innerHTML = `
+      <div class="hero-eyebrow">Today’s reset</div>
+      <div class="hero-tagline">You’ve got one tiny thing to clear.</div>
+      <div class="die-wrap"><div class="die" id="theDie" onclick="rollDice()">${pipsHTML(1)}</div></div>
+      <div class="roll-cta"><button class="btn btn-primary" onclick="rollDice()">🎲 Roll the Dice</button></div>
+    `;
+  } else if(heroState==='rolling'){
+    card.innerHTML = `
+      <div class="hero-eyebrow">Rolling…</div>
+      <div class="die-wrap"><div class="die" id="theDie">${pipsHTML(1)}</div></div>
+    `;
+  } else if(heroState==='reveal' || heroState==='active'){
+    const {face, task} = currentRoll;
+    const c = CAT_COLORS[face.category];
+    const d = DIFF[task.difficulty];
+    card.innerHTML = `
+      <div class="hero-eyebrow">${heroState==='active' ? 'In progress' : '🎲 Your daily reset'}</div>
+      <div class="die-wrap"><div class="die static" id="theDie">${pipsHTML(face.n)}</div></div>
+      <div class="task-card">
+        <span class="cat-chip" style="background:${c.bg}; color:${c.fg};">${face.icon} ${face.category}</span>
+        <div class="task-text">${task.text}</div>
+        <div class="meta-row">
+          <span class="diff-pill">${d.dot} ${task.difficulty} · ${task.time}</span>
+          <span class="xp-pill">+${task.xp} XP</span>
+        </div>
+        <div class="task-actions">
+          ${heroState==='reveal'
+            ? `<button class="btn btn-ghost" onclick="rollDice()">Roll Again</button><button class="btn btn-primary" onclick="startTask()">Start</button>`
+            : `<button class="btn btn-text" onclick="skipTask()">Not Today</button><button class="btn btn-primary" onclick="completeTask()">I Did It ✓</button>`
+          }
+        </div>
+      </div>
+    `;
+  } else if(heroState==='celebrate'){
+    const task = currentRoll.task;
+    card.innerHTML = `
+      <div class="hero-eyebrow">✨ Nice!</div>
+      <div class="done-badge">✨</div>
+      <p style="margin-top:14px; font-size:15px; font-weight:700; color:var(--ink);">One less thing to carry.</p>
+      <div class="celebrate-xp">+${task.xp} XP</div>
+      <div class="celebrate-streak">🔥 ${state.streak} day streak</div>
+      <div class="task-actions" style="margin-top:20px;">
+        <button class="btn btn-ghost" onclick="go('home')">Done</button>
+        <button class="btn btn-primary" onclick="rollDice()">Roll Again</button>
+      </div>
+    `;
+  }
+}
+
+/* =========================================================================
+   HOME — greeting, hero, XP, progress, recent wins
+   ========================================================================= */
+function renderHome(){
+  renderHeroCard();
+  renderStatsBlocks();
+}
+function renderStatsBlocks(){
+  document.getElementById('streakChip').textContent = `🔥 ${state.streak}`;
+  document.querySelector('#greeting b').textContent = `${greetingWord()} 👋`;
+  document.querySelector('#greeting span').textContent = state.streak>0 ? `${state.streak} day streak — keep it going` : 'Ready to clear one thing?';
+
+  const todayXp = state.history.filter(h=>h.date===todayStr()).reduce((s,h)=>s+(Number(h.xp)||0),0);
+  document.getElementById('xpRow').innerHTML = `
+    <div class="xp-tile"><div class="l">Today’s XP</div><div class="n">+${todayXp} XP</div></div>
+    <div class="xp-tile"><div class="l">Total XP</div><div class="n">${state.xp} XP</div><div class="lvl">${levelFor(state.xp)}</div></div>
+  `;
+
+  const done = state.allTimeCompletedIds.length;
+  const remaining = TASK_COUNT - done;
+  const pct = Math.round((done/TASK_COUNT)*100);
+  document.getElementById('progressCard').innerHTML = `
+    <div class="progress-head">Today’s progress</div>
+    <div class="progress-bar"><div class="progress-fill" style="width:${pct}%;"></div></div>
+    <div class="progress-nums"><span>${done} tasks completed</span><span>${remaining} remaining</span></div>
+  `;
+
+  const recentEl = document.getElementById('recentWins');
+  if(state.history.length===0){
+    recentEl.innerHTML = '';
+  } else {
+    const rows = state.history.slice(0,3).map(h=>{
+      const c = CAT_COLORS[h.category] || CAT_COLORS.Wildcard;
+      const face = DICE_FACES.find(f=>f.category===h.category);
+      return `<div class="recent-row"><div class="ic" style="background:${c.bg}; color:${c.fg};">${face?face.icon:'✨'}</div><div class="txt">${h.text}</div><div class="xp">+${Number(h.xp)||0}</div></div>`;
+    }).join('');
+    recentEl.innerHTML = `<h3 style="padding:0 0 4px;">Recent wins</h3>${rows}`;
+  }
+}
+
+/* =========================================================================
+   FEEDBACK — confetti / sound / haptics
+   ========================================================================= */
+function burstConfetti(){
+  if(reduceMotion) return;
+  const host = document.getElementById('heroCard');
+  const layer = document.createElement('div');
+  layer.className = 'confetti-layer';
+  const colors = ['#F2643D','#F0B23E','#2E8570','#7A57A6'];
+  for(let i=0;i<16;i++){
+    const p = document.createElement('div');
+    p.className = 'confetti-piece';
+    const ang = Math.random()*Math.PI*2, dist = 60+Math.random()*70;
+    p.style.setProperty('--tx', Math.cos(ang)*dist+'px');
+    p.style.setProperty('--ty', Math.sin(ang)*dist+'px');
+    p.style.setProperty('--rot', (Math.random()*360)+'deg');
+    p.style.background = colors[i%colors.length];
+    p.style.animationDelay = (Math.random()*0.08)+'s';
+    layer.appendChild(p);
+  }
+  host.appendChild(layer);
+  setTimeout(()=>layer.remove(), 1000);
+}
+let audioCtx = null;
+function playChime(){
+  if(!state.settings.sound) return;
+  try{
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const now = audioCtx.currentTime;
+    [523.25, 783.99].forEach((freq, i)=>{
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine'; osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0, now + i*0.09);
+      gain.gain.linearRampToValueAtTime(0.14, now + i*0.09 + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + i*0.09 + 0.32);
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start(now + i*0.09);
+      osc.stop(now + i*0.09 + 0.34);
+    });
+  }catch(e){}
+}
+function vibrate(){
+  if(!state.settings.haptics) return;
+  try{ if(navigator.vibrate) navigator.vibrate(16); }catch(e){}
+}
+
+/* =========================================================================
+   HISTORY
+   ========================================================================= */
+let historyFilter = 'All';
+function renderHistory(){
+  document.getElementById('histSummary').innerHTML = `
+    <div class="summary-tile"><div class="n">🔥 ${state.streak}</div><div class="l">Current streak</div></div>
+    <div class="summary-tile"><div class="n">${state.longestStreak}</div><div class="l">Best streak</div></div>
+    <div class="summary-tile"><div class="n">${state.xp}</div><div class="l">Total XP</div></div>
+    <div class="summary-tile"><div class="n">${state.allTimeCompletedIds.length}/${TASK_COUNT}</div><div class="l">Tasks tried</div></div>
+  `;
+
+  const filters = document.getElementById('histFilters');
+  const chips = ['All', ...DICE_FACES.map(f=>f.category)];
+  filters.innerHTML = chips.map(c=>`<div class="hist-chip ${c===historyFilter?'on':''}" data-f="${c}">${c}</div>`).join('');
+  filters.querySelectorAll('[data-f]').forEach(el=>{
+    el.onclick = ()=>{ historyFilter = el.dataset.f; renderHistory(); };
+  });
+
+  const list = document.getElementById('histList');
+  const rows = historyFilter==='All' ? state.history : state.history.filter(h=>h.category===historyFilter);
+  if(rows.length===0){
+    list.innerHTML = `<div class="empty-state"><div class="ic">🎲</div><h3>No rolls yet${historyFilter!=='All' ? ' in '+historyFilter : ''}</h3><p style="margin-top:6px;">Roll the dice to start your streak.</p></div>`;
+    return;
+  }
+  let html = '';
+  let lastLabel = null;
+  rows.forEach(h=>{
+    const label = prettyDate(h.date);
+    if(label !== lastLabel){ html += `<div class="hist-group-label">${label}</div>`; lastLabel = label; }
+    const c = CAT_COLORS[h.category] || CAT_COLORS.Wildcard;
+    const face = DICE_FACES.find(f=>f.category===h.category);
+    html += `<div class="hist-row">
+      <div class="ic" style="background:${c.bg}; color:${c.fg};">${face?face.icon:'✨'}</div>
+      <div class="body"><div class="cat">${h.category}</div><div class="txt">${h.text}</div></div>
+      <div class="right"><span class="check">✓</span><span class="xp">+${Number(h.xp)||0} XP</span></div>
+    </div>`;
+  });
+  list.innerHTML = html;
+}
+
+/* =========================================================================
+   SETTINGS
+   ========================================================================= */
+function renderSettings(){
+  const list = document.getElementById('catList');
+  list.innerHTML = DICE_FACES.map(f=>{
+    const c = CAT_COLORS[f.category];
+    const on = state.categories[f.category];
+    return `<div class="settings-row" data-cat="${f.category}">
+      <div class="ic" style="background:${c.bg}; color:${c.fg};">${f.icon}</div>
+      <b>${f.category}</b>
+      <div class="toggle ${on?'on':''}"></div>
+    </div>`;
+  }).join('');
+  list.querySelectorAll('[data-cat]').forEach(el=>{
+    el.onclick = ()=> toggleCategory(el.dataset.cat, el.querySelector('.toggle'));
+  });
+
+  const prefs = document.getElementById('prefList');
+  const s = state.settings;
+  prefs.innerHTML = `
+    <div class="settings-row" data-pref="reminder">
+      <div class="ic" style="background:var(--gold-tint); color:#8A5B0E;">⏰</div>
+      <div style="flex:1;"><b>Daily reminder</b><span class="cap">A gentle nudge once a day</span></div>
+      <div class="toggle ${s.reminder?'on':''}"></div>
+    </div>
+    <div class="settings-row" data-pref="sound">
+      <div class="ic" style="background:var(--mint-tint); color:#2E8570;">🔊</div>
+      <b>Sound</b>
+      <div class="toggle ${s.sound?'on':''}"></div>
+    </div>
+    <div class="settings-row" data-pref="haptics">
+      <div class="ic" style="background:var(--coral-tint); color:var(--coral-dark);">📳</div>
+      <b>Haptics</b>
+      <div class="toggle ${s.haptics?'on':''}"></div>
+    </div>
+    <div class="settings-row" data-pref="darkMode">
+      <div class="ic" style="background:var(--violet-tint); color:var(--violet);">🌙</div>
+      <b>Dark mode</b>
+      <div class="toggle ${s.darkMode?'on':''}"></div>
+    </div>
+    <div class="settings-row" onclick="openAbout()">
+      <div class="ic" style="background:var(--app-bg); color:var(--ink-70); font-weight:800; font-style:italic; font-family:Georgia,serif;">i</div>
+      <b>About</b>
+      <span class="chev">›</span>
+    </div>
+  `;
+  prefs.querySelectorAll('[data-pref]').forEach(el=>{
+    el.onclick = ()=> togglePref(el.dataset.pref, el.querySelector('.toggle'));
+  });
+}
+function toggleCategory(cat, el){
+  const enabledCount = Object.values(state.categories).filter(Boolean).length;
+  if(state.categories[cat] && enabledCount<=1){
+    toast('Keep at least one category on');
+    return;
+  }
+  state.categories[cat] = !state.categories[cat];
+  saveState();
+  el.classList.toggle('on', state.categories[cat]);
+}
+function togglePref(pref, el){
+  state.settings[pref] = !state.settings[pref];
+  saveState();
+  el.classList.toggle('on', state.settings[pref]);
+  applyAppTheme();
+  if(pref==='reminder' && state.settings.reminder) toast('We’ll nudge you once a day — no notifications needed to try the rest of the app.');
+}
+function applyAppTheme(){
+  const phone = document.getElementById('phoneEl');
+  phone.setAttribute('data-app-theme', state.settings.darkMode ? 'dark' : 'light');
+}
+function openAbout(){ document.getElementById('aboutModal').classList.add('show'); }
+function closeAbout(){ document.getElementById('aboutModal').classList.remove('show'); }
+
+let resetArmed = false;
+function resetProgress(){
+  const btn = document.getElementById('resetBtn');
+  if(!resetArmed){
+    resetArmed = true;
+    btn.textContent = 'Tap again to confirm';
+    setTimeout(()=>{ resetArmed=false; btn.textContent='Reset progress'; }, 3000);
+    return;
+  }
+  const keepSettings = state.settings;
+  state = defaultState();
+  state.settings = keepSettings;
+  saveState();
+  resetArmed = false;
+  btn.textContent = 'Reset progress';
+  toast('Progress reset');
+  renderSettings();
+}
+
+/* =========================================================================
+   INIT
+   ========================================================================= */
+function updateClock(){
+  const d = new Date(); let h = d.getHours()%12; if(h===0)h=12;
+  document.getElementById('clock').textContent = h+':'+String(d.getMinutes()).padStart(2,'0');
+}
+function fitPhoneToViewport(){
+  const wrap = document.getElementById('phoneWrap');
+  const availH = window.innerHeight - 150, availW = window.innerWidth - 24;
+  const scale = Math.min(1, availW/390, availH/844);
+  wrap.style.transform = 'scale('+scale+')';
+  wrap.style.transformOrigin = 'top center';
+  wrap.style.marginBottom = (844*scale-844)+'px';
+}
+document.addEventListener('DOMContentLoaded', ()=>{
+  updateClock(); setInterval(updateClock, 30000);
+  fitPhoneToViewport();
+  window.addEventListener('resize', fitPhoneToViewport);
+  applyAppTheme();
+  renderHome();
+});
+</script>
