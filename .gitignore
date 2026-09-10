@@ -19,3 +19,4 @@ android/app/*.keystore
 ios/App/Pods/
 ios/App/build/
 ios/App/App.xcworkspace/xcuserdata/
+android/keystore.properties
