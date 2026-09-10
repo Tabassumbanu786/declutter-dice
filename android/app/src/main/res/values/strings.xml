@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Declutter Dice</string>
+    <string name="title_activity_main">Declutter Dice</string>
+    <string name="package_name">com.declutterdice.app</string>
+    <string name="custom_url_scheme">com.declutterdice.app</string>
+</resources>

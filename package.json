@@ -1,0 +1,17 @@
+{
+  "name": "declutter-dice",
+  "version": "1.0.0",
+  "description": "One roll. One tiny task. One less thing to carry.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@capacitor/android": "^8.5.1",
+    "@capacitor/cli": "^7.6.9",
+    "@capacitor/core": "^8.5.1"
+  }
+}
