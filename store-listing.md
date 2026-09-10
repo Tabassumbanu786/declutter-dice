@@ -46,7 +46,6 @@ declutter, digital minimalism, habit tracker, productivity, streak,
 organize, inbox zero, screen time
 
 ## Privacy policy URL
-Fill in after enabling GitHub Pages (see PRIVACY_SETUP.md) — will look like:
 https://tabassumbanu786.github.io/declutter-dice/privacy-policy.html
 
 ## Contact / support email
